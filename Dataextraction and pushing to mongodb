@@ -25,7 +25,28 @@ def get_channel_stats(youtube,channel_id):
     return data
 channel_details = get_channel_stats(youtube,channel_id)
 channel_details
+A=pd.DataFrame(channel_details)
 *****************************************************************************************
+#Function to get playlistids
+def get_channel_playlists(channel_id):
+        response = youtube.playlists().list(
+            part='snippet,contentDetails',
+            channelId=channel_id,
+            maxResults=100  # Adjust the maximum number of playlists 
+        ).execute()
+        playlists = response['items']
+        channel_playlists=[]
+        
+        for playlist in playlists:
+            data= dict(playlist_id = playlist['id'],
+            playlist_title = playlist['snippet']['title'],
+            )
+            channel_playlists.append(data)
+        return channel_playlists
+playlist_Details=get_channel_playlists(channel_id)
+playlist_Details
+B=pd.DataFrame(playlist_Details)
+********************************************************************************************************
 # Function to get video_ids
 playlist_id="corresponding channel_id"
 def get_video_ids(youtube,channel_id):
@@ -55,6 +76,7 @@ def get_video_ids(youtube,channel_id):
     return (video_ids)
 video_ids= get_video_ids(youtube,playlist_id)
 video_ids
+C=pd.DataFrame(video_ids)
 ***************************************************************************************
 # Function to get video details
 def get_video_details(youtube, video_ids):
@@ -85,8 +107,9 @@ def get_video_details(youtube, video_ids):
             all_video_info.append(video_info)
             
     return(all_video_info)
-video_df=get_video_details(youtube, video_ids)
-video_df
+video_details=get_video_details(youtube, video_ids)
+video_details
+D=pd.DataFrame(video_details)
 *********************************************************************************
 #Function get comment details
 def get_comments_in_videos(youtube, video_ids):
@@ -110,16 +133,16 @@ def get_comments_in_videos(youtube, video_ids):
             print('Could not get comments for video ' + video_id)
         
     return(all_comments)     
-comment_df=get_comments_in_videos(youtube, video_ids)
-comment_df
+comment_details=get_comments_in_videos(youtube, video_ids)
+comment_details
+E=pd.DataFrame(comment_details)
 **********************************************************************************************************************************************
 #Final data pushing
-data = {'channel_details' : channel_details,
-            'video_ids' : video_ids,
-            'video_details' : video_df,
-            'comment_details' : comment_df
+data = {'channel_details' : channel_details[0],
+            'playlist_id' : playlist_Details,
+            'video_details' :video_details,
+            'comment_details' : comment_details
                }
-print(data)
 ****************************************************************************************
 #connection MongoDB with Python
 pip install pymongo
