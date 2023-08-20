@@ -165,9 +165,8 @@ if option == "Getdata":
         video_details=get_video_details(youtube,video_ids)
         D=pd.DataFrame(video_details)
         D['publishedAt'] = D['publishedAt'].apply(lambda x: parser.parse(x)) 
-        D['pushblishDayName'] =D['publishedAt'].apply(lambda x: x.strftime("%A")) 
-        D['durationSecs'] = D['duration'].apply(lambda x: isodate.parse_duration(x))
-        D['durationSecs'] = D['durationSecs'].astype(str)
+        D['pushblishDayName'] =D['publishedAt'].apply(lambda x: x.strftime("%A"))
+        D['durationSecs'] = D['duration'].apply(lambda x: isodate.parse_duration(x).total_seconds())
         D["tags"]=D['tags'].apply(lambda x:','.join(x) if x is not None else x)
 
         video_details=D.to_dict("records")
@@ -205,8 +204,8 @@ if option == "Getdata":
         
 if option=="Migratedata":
     st.header(':violet[Data Migrate zone]')
-    st.write ('''(Note:- This zone specific channel data **Migrate to :blue[MySQL] database from  :green[MongoDB] database** depending on your selection,
-                if unavailable your option first collect data.)''')
+    st.write ('''(Note:- This zone collects channel data **Migrate to :blue[MySQL] database from  :green[MongoDB] database** depending on your selection,
+                if your option is unavailable first collect data.)''')
     client = pymongo.MongoClient("mongodb://localhost:27017/")
     mydb = client['Youtube_channels']
     collection = mydb['Youtube_data']
@@ -235,7 +234,7 @@ if option=="Migratedata":
         cur.execute("create database IF NOT EXISTS Youtube_Channels")
         
         #2.creating new table(channel_details,playlist_details,video_details,comment_details)
-        myconnection = pymysql.connect(host = '127.0.0.1',user='root',passwd="Aradhana@2509",database="Youtube_Channels")
+        myconnection = pymysql.connect(host = '127.0.0.1',user='root',passwd="Aradhana@2509",database="Youtube_datawarehousing")
         cur = myconnection.cursor()
         cur.execute("CREATE TABLE IF NOT EXISTS channel_collection(Channel_details varchar(225),Playlist_id varchar(225),Subscribers int,Views int,Total_Videos int,Description varchar(5000))")
         cur.execute("CREATE TABLE IF NOT EXISTS playlist_collection(playlist_id varchar(225),playlist_title varchar(1000))")
@@ -365,7 +364,7 @@ if option == "Querydata":
              df8.index += 1
              st.dataframe(df8)
         elif option == '9. What is the average duration of all videos in each channel, and what are their corresponding channel names?':
-             query = "SELECT Channel_name AS Channel_Name, TIME_FORMAT(SEC_TO_TIME(AVG(TIME_TO_SEC(TIME(video.Duration)))), '%H:%i:%s') AS duration  FROM channel JOIN playlist ON channel.Channel_Id = playlist.Channel_Id JOIN video ON playlist.Playlist_Id = video.Playlist_Id GROUP by Channel_Name ORDER BY duration DESC ;"
+             query = "SELECT channelTitle AS Channel_Name,AVG(durationSecs)/60 AS Average_duration_of_videos FROM video_collection GROUP BY channelTitle ORDER BY Avg(durationSecs) DESC;"
              r9= pd.read_sql(query,myconnection)
              df9 = pd.DataFrame(r9,columns=['Channel_Name','Average_duration_of_videos_(HH:MM:SS)']).reset_index(drop=True)
              df9.index += 1
